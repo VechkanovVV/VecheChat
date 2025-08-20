@@ -15,10 +15,11 @@ public:
     template <typename T, typename... Args>  
     void registerService(Args&&... args){
         auto key = std::type_index(typeid(T));
-        if (services_.count(key) != 0) {
+        auto [it, inserted] = services_.emplace(key, std::make_shared<T>(std::forward<Args>(args)...));
+        if (!inserted) {
             throw std::runtime_error("The object has already been created!");
         }
-        services_.emplace(key, std::make_shared<T>(std::forward<Args>(args)...));
+        
     }
     
     template <typename T>
