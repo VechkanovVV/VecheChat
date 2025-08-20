@@ -1,13 +1,15 @@
 #pragma once
-#include "ITimerStrategy.h"
 #include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 
-class TimerDelegate final{
-public:
+#include "ITimerStrategy.h"
+
+class TimerDelegate final
+{
+   public:
     TimerDelegate();
     ~TimerDelegate();
 
@@ -16,7 +18,7 @@ public:
     void reset();
     void changeStrategy(std::unique_ptr<ITimerStrategy> strategy);
 
-private:
+   private:
     void runLoop();
 
     std::mutex mutex_;

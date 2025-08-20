@@ -1,22 +1,23 @@
 #pragma once
 
-#include <thread>
-#include <mutex>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <mutex>
 #include <queue>
-#include <atomic>
+#include <thread>
 #include <vector>
 
-class ThreadPool final{
-public:
+class ThreadPool final
+{
+   public:
     explicit ThreadPool(size_t amount);
     ~ThreadPool();
 
     void add_task(std::function<void()> task);
     void wait();
 
-private:
+   private:
     size_t amount_;
     std::queue<std::function<void()>> tasks_;
     std::vector<std::thread> workers_;
