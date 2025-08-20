@@ -4,6 +4,7 @@
 #include <functional>
 #include <queue>
 #include <atomic>
+#include <vector>
 
 class ThreadPool final{
 public:
