@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  style-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+
+      - name: Run clang-format check
+        run: |
+          FILES=$(find . -name "*.cpp" -o -name "*.h")
+          echo "Checking style for files:"
+          echo "$FILES"
+          clang-format --dry-run --Werror $FILES
