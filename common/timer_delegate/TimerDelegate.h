@@ -6,7 +6,7 @@
 #include <mutex>
 #include <thread>
 
-class TimerDelegate {
+class TimerDelegate final{
 public:
     TimerDelegate();
     ~TimerDelegate();
