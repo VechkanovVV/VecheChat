@@ -6,8 +6,12 @@ project(${projectName})
 
 enable_testing()
 
+add_library(tp utils/thread_pool/thread_pool.cpp)
+
 add_executable(${projectName}
     src/main.cpp
 )
 
-add_subdirectory(tests/)
+target_link_libraries(${projectName} PRIVATE tp)
+
+add_subdirectory(tests)
