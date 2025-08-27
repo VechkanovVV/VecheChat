@@ -2,21 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [ 
-      "main",
-      "dev"
-      ]
+    branches: 
+      - main
+      - dev
   pull_request:
-    branches: [ 
-      "main",
-      "dev"
-      ]
+    branches: 
+      - main
+      - dev
 
 jobs:
-  style-check:
+  style_check-build-testing:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Update mirrors
+        run:  sudo apt update
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -28,4 +29,18 @@ jobs:
           FILES=$(find . -name "*.cpp" -o -name "*.h")
           echo "Checking style for files:"
           echo "$FILES"
-          clang-format --dry-run --Werror $FILES
+          echo "$FILES" | xargs clang-format --dry-run --Werror
+
+      - name: CMake installation
+        run: sudo apt-get install -y cmake
+
+      - name: Building and Testing
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake ..
+          cmake --build .
+          ctest --output-on-failure
+
+
+          
