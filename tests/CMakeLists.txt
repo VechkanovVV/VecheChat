@@ -15,5 +15,12 @@ add_executable(thread_pool_test
 )
 target_link_libraries(thread_pool_test PRIVATE GTest::gtest_main tp)
 
+add_executable(timer_delegate_test
+    utils/timer_delegate/timer_delegate_test.cpp
+)
+
+target_link_libraries(timer_delegate_test PRIVATE GTest::gtest_main td)
+
 add_test(NAME service_locator COMMAND service_locator_test)
 add_test(NAME thread_pool COMMAND thread_pool_test)
+add_test(NAME timer_delegate COMMAND timer_delegate_test)

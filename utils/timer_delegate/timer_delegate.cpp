@@ -1,4 +1,4 @@
-#include "TimerDelegate.h"
+#include "timer_delegate.h"
 
 #include <chrono>
 #include <stdexcept>
@@ -43,7 +43,11 @@ void TimerDelegate::stop()
 
     if (worker_.joinable())
     {
-        worker_.join();
+        if (std::this_thread::get_id() != worker_.get_id())
+        {
+            worker_.join();
+        }
+        // else: avoid joining self to prevent deadlock
     }
 }
 

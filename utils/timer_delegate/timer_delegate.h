@@ -5,8 +5,12 @@
 #include <mutex>
 #include <thread>
 
-#include "ITimerStrategy.h"
+#include "itimer_strategy.h"
 
+/// TimerDelegate is responsible for running a timer loop in a separate thread.
+/// It manages a timer strategy (ITimerStrategy) that defines when and what
+/// action to execute. The delegate supports starting, stopping, resetting,
+/// and switching strategies in a thread-safe manner.
 class TimerDelegate final
 {
    public:
