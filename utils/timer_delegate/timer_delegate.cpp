@@ -22,14 +22,13 @@ void TimerDelegate::start(std::unique_ptr<ITimerStrategy> strategy)
 
     {
         std::lock_guard lk(mutex_);
-        current_strategy_ = std::move(strategy);
+        current_strategy_ = std::shared_ptr<ITimerStrategy>(std::move(strategy));
         strategy_changed_.store(true);
         reset_flag_.store(false);
         stop_flag_.store(false);
     }
 
     worker_ = std::thread(&TimerDelegate::runLoop, this);
-    cv_.notify_one();
 }
 
 void TimerDelegate::stop()
@@ -47,7 +46,6 @@ void TimerDelegate::stop()
         {
             worker_.join();
         }
-        // else: avoid joining self to prevent deadlock
     }
 }
 
@@ -65,7 +63,12 @@ void TimerDelegate::changeStrategy(std::unique_ptr<ITimerStrategy> strategy)
 {
     {
         std::lock_guard lk(mutex_);
-        current_strategy_ = std::move(strategy);
+
+        if (!strategy.get())
+        {
+            throw std::runtime_error("Strategy must not be nullptr!");
+        }
+        current_strategy_ = std::shared_ptr<ITimerStrategy>(std::move(strategy));
         strategy_changed_.store(true);
     }
 
@@ -80,12 +83,20 @@ void TimerDelegate::runLoop()
             std::unique_lock lk(mutex_);
             if (stop_flag_.load()) break;
 
-            cv_.wait(lk, [&] { return stop_flag_.load() || current_strategy_ != nullptr; });
+            cv_.wait(lk,
+                     [&] {
+                         return stop_flag_.load() || current_strategy_ != nullptr || reset_flag_.load() ||
+                                strategy_changed_.load();
+                     });
 
             if (stop_flag_.load()) break;
 
             ITimerStrategy* strategy_to_use = current_strategy_.get();
 
+            if (!strategy_to_use)
+            {
+                continue;
+            }
             if (strategy_changed_.load() || reset_flag_.load())
             {
                 strategy_changed_.store(false);
@@ -116,6 +127,7 @@ void TimerDelegate::runLoop()
                 }
                 catch (...)
                 {
+                    // Exception in onTimeout() is intentionally ignored to prevent timer thread from terminating.
                 }
             }
         }

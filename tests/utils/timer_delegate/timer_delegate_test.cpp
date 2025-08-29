@@ -69,3 +69,28 @@ TEST(TimerDelegateTest, CheckTimeout)
     ASSERT_EQ(std::future_status::ready, fut.wait_for(std::chrono::milliseconds(1000)));
     td.stop();
 }
+
+TEST(TimerDelegateTest, CheckReset)
+{
+    struct StrategyWithCounter final : public ITimerStrategy
+    {
+        int nextTimeout() override { return 100; }
+        void onTimeout() override { ++count; }
+        std::atomic<int> count{0};
+    };
+
+    TimerDelegate td;
+    auto strategy = new StrategyWithCounter();
+    td.start(std::unique_ptr<ITimerStrategy>(strategy));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    td.reset();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    EXPECT_EQ(0, strategy->count.load());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(1, strategy->count.load());
+
+    td.stop();
+}
