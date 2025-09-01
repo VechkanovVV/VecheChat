@@ -10,6 +10,11 @@ add_executable(service_locator_test
 )
 target_link_libraries(service_locator_test PRIVATE GTest::gtest_main)
 
+add_executable(threadsafe_queue_test
+    utils/thread_pool/threadsafe_queue_test.cpp
+)
+target_link_libraries(threadsafe_queue_test PRIVATE GTest::gtest_main)
+
 add_executable(thread_pool_test
     utils/thread_pool/thread_pool_test.cpp
 )
@@ -22,5 +27,6 @@ add_executable(timer_delegate_test
 target_link_libraries(timer_delegate_test PRIVATE GTest::gtest_main td)
 
 add_test(NAME service_locator COMMAND service_locator_test)
+add_test(NAME threadsafe_queue COMMAND threadsafe_queue_test)
 add_test(NAME thread_pool COMMAND thread_pool_test)
 add_test(NAME timer_delegate COMMAND timer_delegate_test)
