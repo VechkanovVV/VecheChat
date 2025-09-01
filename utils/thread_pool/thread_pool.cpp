@@ -1,8 +1,6 @@
 #include "thread_pool.h"
 
-#include <stdexcept>
-
-ThreadPool::ThreadPool(size_t thread_count) : thread_count_(thread_count)
+utils::ThreadPool::ThreadPool(size_t thread_count) : thread_count_(thread_count)
 {
     for (size_t i = 0; i < thread_count_; ++i)
     {
@@ -12,46 +10,26 @@ ThreadPool::ThreadPool(size_t thread_count) : thread_count_(thread_count)
                 while (true)
                 {
                     std::function<void()> task;
+                    auto popped = tasks_.wait_and_pop(task);
+                    if (popped)
+                        task();
+                    else
                     {
-                        std::unique_lock<std::mutex> lock(mtx_);
-                        cv_.wait(lock, [this] { return !tasks_.empty() || stop_.load(); });
-
-                        if (stop_.load() && tasks_.empty())
-                        {
-                            return;
-                        }
-
-                        if (!tasks_.empty())
-                        {
-                            task = std::move(tasks_.front());
-                            tasks_.pop();
-                        }
-                        else
-                        {
-                            continue;
-                        }
+                        break;
                     }
-                    task();
                 }
             });
     }
 }
 
-ThreadPool::~ThreadPool()
+utils::ThreadPool::~ThreadPool()
 {
-    {
-        std::lock_guard lock(mtx_);
-        stop_.store(true, std::memory_order_release);
-        cv_.notify_all();
-    }
-
     stop_and_wait();
 }
 
-void ThreadPool::stop_and_wait()
+void utils::ThreadPool::stop_and_wait()
 {
-    stop_.store(true, std::memory_order_acquire);
-    cv_.notify_all();
+    tasks_.stop();
 
     for (auto& w : workers_)
     {
@@ -62,16 +40,7 @@ void ThreadPool::stop_and_wait()
     }
 }
 
-void ThreadPool::add_task(std::function<void()> task)
+void utils::ThreadPool::add_task(std::function<void()> task)
 {
-    {
-        std::lock_guard lock(mtx_);
-
-        if (stop_.load(std::memory_order_acquire))
-        {
-            throw std::runtime_error("ThreadPool has been stopped!");
-        }
-        tasks_.emplace(std::move(task));
-    }
-    cv_.notify_one();
+    tasks_.push(task);
 }

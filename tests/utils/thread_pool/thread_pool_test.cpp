@@ -9,11 +9,11 @@
 TEST(ThreadPoolTest, test)
 {
     auto n = std::thread::hardware_concurrency();
-    ThreadPool tp{n};
+    utils::ThreadPool tp{n};
     std::atomic<int> counter{0};
     for (size_t i = 0; i < 100; ++i)
     {
-        tp.add_task([&counter] { counter.store(counter.load() + 1); });
+        tp.add_task([&counter] { counter.fetch_add(1); });
     }
 
     tp.stop_and_wait();
