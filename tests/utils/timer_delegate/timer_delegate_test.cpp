@@ -80,8 +80,9 @@ TEST(TimerDelegateTest, CheckReset)
     };
 
     utils::TimerDelegate td;
-    auto strategy = new StrategyWithCounter();
-    td.start(std::unique_ptr<utils::ITimerStrategy>(strategy));
+    auto strategy_ptr = std::make_unique<StrategyWithCounter>();
+    auto* strategy = strategy_ptr.get();
+    td.start(std::move(strategy_ptr));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     td.reset();

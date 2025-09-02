@@ -35,17 +35,15 @@ void utils::TimerDelegate::stop()
 {
     {
         std::lock_guard lk(mutex_);
+        if (stop_flag_.load()) return;
         stop_flag_.store(true);
     }
 
     cv_.notify_one();
 
-    if (worker_.joinable())
+    if (worker_.joinable() && worker_.get_id() != std::this_thread::get_id())
     {
-        if (std::this_thread::get_id() != worker_.get_id())
-        {
-            worker_.join();
-        }
+        worker_.join();
     }
 }
 
@@ -91,7 +89,7 @@ void utils::TimerDelegate::runLoop()
 
             if (stop_flag_.load()) break;
 
-            ITimerStrategy* strategy_to_use = current_strategy_.get();
+            std::shared_ptr<ITimerStrategy> strategy_to_use = current_strategy_;
 
             if (!strategy_to_use)
             {
