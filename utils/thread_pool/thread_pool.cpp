@@ -39,8 +39,3 @@ void utils::ThreadPool::stop_and_wait()
         }
     }
 }
-
-void utils::ThreadPool::add_task(std::function<void()> task)
-{
-    tasks_.push(task);
-}
