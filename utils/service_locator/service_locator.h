@@ -5,6 +5,8 @@
 #include <typeindex>
 #include <unordered_map>
 
+namespace utils
+{
 /// Thread-safe registry of singleton services by type.
 /// registerService<T>(...) — create and register a singleton service of type T.
 /// get<T>() — retrieve a shared_ptr<T>.
@@ -50,3 +52,4 @@ class ServiceLocator final
     std::unordered_map<std::type_index, std::shared_ptr<void>> services_;
     std::mutex mtx_;
 };
+};  // namespace utils

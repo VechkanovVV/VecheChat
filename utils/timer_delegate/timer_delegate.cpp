@@ -3,12 +3,12 @@
 #include <chrono>
 #include <stdexcept>
 
-TimerDelegate::~TimerDelegate()
+utils::TimerDelegate::~TimerDelegate()
 {
     stop();
 }
 
-void TimerDelegate::start(std::unique_ptr<ITimerStrategy> strategy)
+void utils::TimerDelegate::start(std::unique_ptr<ITimerStrategy> strategy)
 {
     if (!strategy)
     {
@@ -31,7 +31,7 @@ void TimerDelegate::start(std::unique_ptr<ITimerStrategy> strategy)
     worker_ = std::thread(&TimerDelegate::runLoop, this);
 }
 
-void TimerDelegate::stop()
+void utils::TimerDelegate::stop()
 {
     {
         std::lock_guard lk(mutex_);
@@ -49,7 +49,7 @@ void TimerDelegate::stop()
     }
 }
 
-void TimerDelegate::reset()
+void utils::TimerDelegate::reset()
 {
     {
         std::lock_guard lk(mutex_);
@@ -59,7 +59,7 @@ void TimerDelegate::reset()
     cv_.notify_one();
 }
 
-void TimerDelegate::changeStrategy(std::unique_ptr<ITimerStrategy> strategy)
+void utils::TimerDelegate::changeStrategy(std::unique_ptr<ITimerStrategy> strategy)
 {
     {
         std::lock_guard lk(mutex_);
@@ -75,7 +75,7 @@ void TimerDelegate::changeStrategy(std::unique_ptr<ITimerStrategy> strategy)
     cv_.notify_one();
 }
 
-void TimerDelegate::runLoop()
+void utils::TimerDelegate::runLoop()
 {
     while (true)
     {

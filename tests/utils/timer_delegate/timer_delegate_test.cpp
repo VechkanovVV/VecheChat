@@ -8,13 +8,13 @@
 
 TEST(TimerDelegateTest, NullptrTest)
 {
-    TimerDelegate td{};
+    utils::TimerDelegate td{};
     EXPECT_THROW(td.start(nullptr), std::invalid_argument);
 }
 
 TEST(TimerDelegateTest, DoubleStart)
 {
-    class FirstStrategy final : public ITimerStrategy
+    class FirstStrategy final : public utils::ITimerStrategy
     {
        public:
         int nextTimeout() override { return 150; }
@@ -22,7 +22,7 @@ TEST(TimerDelegateTest, DoubleStart)
         void onTimeout() override {}
     };
 
-    TimerDelegate td{};
+    utils::TimerDelegate td{};
 
     td.start(std::make_unique<FirstStrategy>());
     EXPECT_THROW(td.start(std::make_unique<FirstStrategy>()), std::runtime_error);
@@ -53,7 +53,7 @@ TEST(TimerDelegateTest, CheckTimeout)
         std::future<void> get_future() { return p.get_future(); }
     } p{};
 
-    struct FirstStrategy final : public ITimerStrategy
+    struct FirstStrategy final : public utils::ITimerStrategy
     {
         FirstStrategy(Promise& p) : p(p) {}
         int nextTimeout() override { return 150; }
@@ -64,7 +64,7 @@ TEST(TimerDelegateTest, CheckTimeout)
 
     auto fut = p.get_future();
 
-    TimerDelegate td;
+    utils::TimerDelegate td;
     td.start(std::make_unique<FirstStrategy>(p));
     ASSERT_EQ(std::future_status::ready, fut.wait_for(std::chrono::milliseconds(1000)));
     td.stop();
@@ -72,16 +72,16 @@ TEST(TimerDelegateTest, CheckTimeout)
 
 TEST(TimerDelegateTest, CheckReset)
 {
-    struct StrategyWithCounter final : public ITimerStrategy
+    struct StrategyWithCounter final : public utils::ITimerStrategy
     {
         int nextTimeout() override { return 100; }
         void onTimeout() override { ++count; }
         std::atomic<int> count{0};
     };
 
-    TimerDelegate td;
+    utils::TimerDelegate td;
     auto strategy = new StrategyWithCounter();
-    td.start(std::unique_ptr<ITimerStrategy>(strategy));
+    td.start(std::unique_ptr<utils::ITimerStrategy>(strategy));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     td.reset();

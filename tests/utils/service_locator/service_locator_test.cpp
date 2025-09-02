@@ -9,7 +9,7 @@ TEST(ServiceLocatorTests, RegisterAndGetLogger)
         std::string log(const std::string& msg) const { return "[Log: " + msg + "]\n"; }
     };
 
-    ServiceLocator sl{};
+    utils::ServiceLocator sl{};
     EXPECT_FALSE(sl.has<Logger>());
 
     ASSERT_NO_THROW(sl.registerService<Logger>());
