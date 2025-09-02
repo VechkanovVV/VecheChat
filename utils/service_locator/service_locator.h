@@ -47,8 +47,6 @@ class ServiceLocator final
     }
 
    private:
-    // Note: Using std::type_index as a key in unordered_map is generally fine,
-    // but may have performance implications with a large number of types.
     std::unordered_map<std::type_index, std::shared_ptr<void>> services_;
     std::mutex mtx_;
 };
