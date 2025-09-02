@@ -64,9 +64,9 @@ void utils::TimerDelegate::changeStrategy(std::unique_ptr<ITimerStrategy> strate
     {
         std::lock_guard lk(mutex_);
 
-        if (!strategy.get())
+        if (!strategy)
         {
-            throw std::runtime_error("Strategy must not be nullptr!");
+            throw std::invalid_argument("Strategy must not be nullptr!");
         }
         current_strategy_ = std::shared_ptr<ITimerStrategy>(std::move(strategy));
         strategy_changed_.store(true);
