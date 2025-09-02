@@ -18,7 +18,7 @@ namespace utils
 // Contract: before destroying the queue the user must either call stop() or ensure no threads are blocked in
 // wait_and_pop.
 template <typename T>
-class ThreadsafeQueue
+class ThreadsafeQueue final
 {
    private:
     mutable std::mutex mtx_;
