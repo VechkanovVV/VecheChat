@@ -1,4 +1,4 @@
-#include "../../../utils/thread_pool/threadsafe_queue.h"
+#include "threadsafe_queue.h"
 
 #include <gtest/gtest.h>
 

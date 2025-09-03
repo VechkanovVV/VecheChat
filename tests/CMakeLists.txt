@@ -6,26 +6,53 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+#service_locator_test
 add_executable(service_locator_test
     utils/service_locator/service_locator_test.cpp
 )
+
 target_link_libraries(service_locator_test PRIVATE GTest::gtest_main)
 
+target_include_directories(service_locator_test
+    PUBLIC
+    ../utils/service_locator
+)
+
+#threadsafe_queue_test
 add_executable(threadsafe_queue_test
     utils/thread_pool/threadsafe_queue_test.cpp
 )
+
 target_link_libraries(threadsafe_queue_test PRIVATE GTest::gtest_main)
 
+target_include_directories(threadsafe_queue_test
+    PUBLIC
+    ../utils/thread_pool
+)
+
+#thread_pool_test
 add_executable(thread_pool_test
     utils/thread_pool/thread_pool_test.cpp
 )
+
 target_link_libraries(thread_pool_test PRIVATE GTest::gtest_main tp)
 
+target_include_directories(thread_pool_test
+    PUBLIC
+    ../utils/thread_pool
+)
+
+#timer_delegate_test
 add_executable(timer_delegate_test
     utils/timer_delegate/timer_delegate_test.cpp
 )
 
 target_link_libraries(timer_delegate_test PRIVATE GTest::gtest_main td)
+
+target_include_directories(timer_delegate_test
+    PUBLIC
+    ../utils/timer_delegate
+)
 
 add_test(NAME service_locator COMMAND service_locator_test)
 add_test(NAME threadsafe_queue COMMAND threadsafe_queue_test)

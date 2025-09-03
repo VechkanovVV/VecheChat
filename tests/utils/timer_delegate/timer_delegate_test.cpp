@@ -1,10 +1,10 @@
-#include "../../../utils/timer_delegate/timer_delegate.h"
+#include "timer_delegate.h"
 
 #include <gtest/gtest.h>
 
 #include <future>
 
-#include "../../../utils/timer_delegate/itimer_strategy.h"
+#include "itimer_strategy.h"
 
 TEST(TimerDelegateTest, NullptrTest)
 {

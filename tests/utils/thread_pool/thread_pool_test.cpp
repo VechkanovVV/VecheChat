@@ -1,4 +1,4 @@
-#include "../../../utils/thread_pool/thread_pool.h"
+#include "thread_pool.h"
 
 #include <gtest/gtest.h>
 

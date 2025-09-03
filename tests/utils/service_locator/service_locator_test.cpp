@@ -1,4 +1,4 @@
-#include "../../../utils/service_locator/service_locator.h"
+#include "service_locator.h"
 
 #include <gtest/gtest.h>
 
