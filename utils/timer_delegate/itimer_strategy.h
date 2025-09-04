@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 /// Timer "Strategy" interface: defines after how many milliseconds to trigger
 /// and what action to perform on trigger.
 
@@ -9,7 +11,7 @@ class ITimerStrategy
 {
    public:
     virtual ~ITimerStrategy() = default;
-    virtual int nextTimeout() = 0;
+    virtual std::chrono::milliseconds nextTimeout() = 0;
     virtual void onTimeout() = 0;
 };
 };  // namespace utils

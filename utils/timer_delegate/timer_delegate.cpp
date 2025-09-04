@@ -1,6 +1,5 @@
 #include "timer_delegate.h"
 
-#include <chrono>
 #include <stdexcept>
 
 utils::TimerDelegate::~TimerDelegate()
@@ -102,16 +101,15 @@ void utils::TimerDelegate::runLoop()
                 continue;
             }
 
-            const int timeout = strategy_to_use->nextTimeout();
-            if (timeout < 0)
+            const auto timeout = strategy_to_use->nextTimeout();
+            if (timeout < std::chrono::milliseconds::zero())
             {
                 cv_.wait(lk, [&] { return stop_flag_.load() || strategy_changed_.load() || reset_flag_.load(); });
                 continue;
             }
 
-            const bool expired =
-                !cv_.wait_for(lk, std::chrono::milliseconds(timeout),
-                              [&] { return stop_flag_.load() || reset_flag_.load() || strategy_changed_.load(); });
+            const bool expired = !cv_.wait_for(
+                lk, timeout, [&] { return stop_flag_.load() || reset_flag_.load() || strategy_changed_.load(); });
 
             if (stop_flag_.load()) break;
             if (strategy_changed_.load() || reset_flag_.load()) continue;

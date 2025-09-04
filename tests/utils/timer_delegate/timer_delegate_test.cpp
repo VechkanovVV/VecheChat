@@ -17,7 +17,7 @@ TEST(TimerDelegateTest, DoubleStart)
     class FirstStrategy final : public utils::ITimerStrategy
     {
        public:
-        int nextTimeout() override { return 150; }
+        virtual std::chrono::milliseconds nextTimeout() override { return std::chrono::milliseconds(150); }
 
         void onTimeout() override {}
     };
@@ -56,7 +56,7 @@ TEST(TimerDelegateTest, CheckTimeout)
     struct FirstStrategy final : public utils::ITimerStrategy
     {
         FirstStrategy(Promise& p) : p(p) {}
-        int nextTimeout() override { return 150; }
+        std::chrono::milliseconds nextTimeout() override { return std::chrono::milliseconds(150); }
         void onTimeout() override { p.set(); }
 
         Promise& p;
@@ -74,7 +74,7 @@ TEST(TimerDelegateTest, CheckReset)
 {
     struct StrategyWithCounter final : public utils::ITimerStrategy
     {
-        int nextTimeout() override { return 100; }
+        std::chrono::milliseconds nextTimeout() override { return std::chrono::milliseconds(100); }
         void onTimeout() override { ++count; }
         std::atomic<int> count{0};
     };
