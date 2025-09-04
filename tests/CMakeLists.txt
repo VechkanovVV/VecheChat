@@ -54,7 +54,21 @@ target_include_directories(timer_delegate_test
     ../utils/timer_delegate
 )
 
+#raft_strategies_test
+add_executable(raft_strategies_test
+    algorithm/raft/strategies_test.cpp
+)
+
+target_link_libraries(raft_strategies_test PRIVATE GTest::gtest_main)
+
+target_include_directories(raft_strategies_test
+    PUBLIC
+    ../algorithm/raft
+    ../utils/timer_delegate
+)
+
 add_test(NAME service_locator COMMAND service_locator_test)
 add_test(NAME threadsafe_queue COMMAND threadsafe_queue_test)
 add_test(NAME thread_pool COMMAND thread_pool_test)
 add_test(NAME timer_delegate COMMAND timer_delegate_test)
+add_test(NAME raft_strategies COMMAND raft_strategies_test)
