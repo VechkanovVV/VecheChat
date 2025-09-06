@@ -56,14 +56,30 @@ target_include_directories(timer_delegate_test
 
 #raft_strategies_test
 add_executable(raft_strategies_test
-    algorithm/raft/strategies_test.cpp
+    algorithm/raft/core/strategies_test.cpp
 )
 
 target_link_libraries(raft_strategies_test PRIVATE GTest::gtest_main)
 
 target_include_directories(raft_strategies_test
     PUBLIC
-    ../algorithm/raft
+    ../utils/timer_delegate
+    ../algorithm/raft/core
+)
+
+#raft_core_test
+add_executable(raft_core_test
+    algorithm/raft/core/raft_core_test.cpp
+    ../algorithm/raft/core/raft_core.cpp
+    ../utils/timer_delegate/timer_delegate.cpp
+)
+
+target_link_libraries(raft_core_test PRIVATE GTest::gtest_main)
+
+target_include_directories(raft_core_test
+    PUBLIC
+    ../algorithm/raft/core
+    ../algorithm/raft/transport
     ../utils/timer_delegate
 )
 
@@ -72,3 +88,5 @@ add_test(NAME threadsafe_queue COMMAND threadsafe_queue_test)
 add_test(NAME thread_pool COMMAND thread_pool_test)
 add_test(NAME timer_delegate COMMAND timer_delegate_test)
 add_test(NAME raft_strategies COMMAND raft_strategies_test)
+add_test(NAME raft_core COMMAND raft_core_test)
+

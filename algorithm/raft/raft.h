@@ -1,3 +1,0 @@
-class Raft final
-{
-};

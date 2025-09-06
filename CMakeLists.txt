@@ -4,6 +4,9 @@ set(projectName VecheChat)
 
 project(${projectName})
 
+find_package(Protobuf REQUIRED)
+find_package(gRPC REQUIRED)
+
 enable_testing()
 
 add_library(tp utils/thread_pool/thread_pool.cpp)
@@ -16,4 +19,12 @@ add_executable(${projectName}
 target_link_libraries(${projectName} PRIVATE tp)
 target_link_libraries(${projectName} PRIVATE td)
 
+target_include_directories(${projectName}
+    PUBLIC
+    utils/service_locator
+    utils/thread_pool
+)
+
 add_subdirectory(tests)
+add_subdirectory(algorithm/raft)
+add_subdirectory(protos)
