@@ -7,6 +7,10 @@ project(${projectName})
 find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
 
+add_subdirectory(protos)
+
+include_directories(${CMAKE_BINARY_DIR}/protos/raft)
+
 enable_testing()
 
 add_library(tp utils/thread_pool/thread_pool.cpp)
@@ -25,6 +29,5 @@ target_include_directories(${projectName}
     utils/thread_pool
 )
 
-add_subdirectory(tests)
 add_subdirectory(algorithm/raft)
-add_subdirectory(protos)
+add_subdirectory(tests)

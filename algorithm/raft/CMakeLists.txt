@@ -1,5 +1,6 @@
 add_library(RaftService
     core/raft_core.cpp
+    transport/raft_grpc_transport.cpp
 )
 
 target_include_directories(RaftService
@@ -10,9 +11,7 @@ target_include_directories(RaftService
         core
         service
         transport
+        ${CMAKE_BINARY_DIR}/protos/raft
 )
 
-target_link_libraries(RaftService
-    PUBLIC
-        raft_proto
-)
+target_link_libraries(RaftService PUBLIC raft_proto)
