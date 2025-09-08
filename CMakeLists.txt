@@ -27,7 +27,14 @@ target_include_directories(${projectName}
     PUBLIC
     utils/service_locator
     utils/thread_pool
+    utils/timer_delegate
+    algorithm/raft/core
+    algorithm/raft/transport
+    algorithm/raft/service
+    ${CMAKE_BINARY_DIR}/protos/raft
 )
 
 add_subdirectory(algorithm/raft)
 add_subdirectory(tests)
+
+target_link_libraries(${projectName} PRIVATE RaftService)

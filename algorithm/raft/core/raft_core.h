@@ -9,6 +9,7 @@
 
 #include "iraft_transport.h"
 #include "messages.h"
+#include "peer_info.h"
 #include "timer_delegate.h"
 
 enum class Role
@@ -16,12 +17,6 @@ enum class Role
     Follower,
     Candidate,
     Leader
-};
-
-struct PeerInfo
-{
-    uint64_t id;
-    std::string address;
 };
 
 struct Config
