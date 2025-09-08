@@ -314,3 +314,18 @@ Role RaftCore::role()
 {
     return role_;
 }
+
+std::string RaftCore::leader_address()
+{
+    if (!leader_id_) return "";
+    std::string add = "";
+    for (const auto& p : config_.peers)
+    {
+        if (p.id == static_cast<uint64_t>(*leader_id_))
+        {
+            add = p.address;
+        }
+    }
+
+    return add;
+}

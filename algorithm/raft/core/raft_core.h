@@ -42,6 +42,8 @@ class RaftCore final
 
     Role role();
 
+    std::string leader_address();
+
     RequestVoteResponseMsg onRequestVote(const RequestVoteRequestMsg&);
     AppendEntriesResponseMsg onAppendEntries(const AppendEntriesRequestMsg&);
 

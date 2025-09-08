@@ -102,6 +102,30 @@ target_include_directories(raft_grpc_transport_test
 
 add_dependencies(raft_grpc_transport_test raft_proto tp)
 
+#raft_service_test
+add_executable(raft_service_test
+    algorithm/raft/service/raft_service_test.cpp
+)
+
+target_link_libraries(raft_service_test PRIVATE
+    GTest::gtest_main
+    RaftService
+    td
+    tp
+    raft_proto
+)
+
+target_include_directories(raft_service_test
+    PUBLIC
+    ../algorithm/raft/service
+    ../utils/service_locator
+    ../utils/thread_pool
+    ../algorithm/raft/core
+    ${CMAKE_BINARY_DIR}/protos/raft
+)
+
+add_dependencies(raft_service_test RaftService td tp raft_proto)
+
 add_test(NAME service_locator COMMAND service_locator_test)
 add_test(NAME threadsafe_queue COMMAND threadsafe_queue_test)
 add_test(NAME thread_pool COMMAND thread_pool_test)
@@ -109,4 +133,5 @@ add_test(NAME timer_delegate COMMAND timer_delegate_test)
 add_test(NAME raft_strategies COMMAND raft_strategies_test)
 add_test(NAME raft_core COMMAND raft_core_test)
 add_test(NAME raft_grpc_transport COMMAND raft_grpc_transport_test)
+add_test(NAME raft_service COMMAND raft_service_test)
 
