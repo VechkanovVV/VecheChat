@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "logger.h"
 #include "messages.h"
 #include "raft_core.h"
 
@@ -17,6 +18,12 @@ RaftServiceImpl::RaftServiceImpl(std::shared_ptr<RaftCore> core, std::shared_ptr
 grpc::Status RaftServiceImpl::RequestVote(grpc::ServerContext* context, const raft::v1::RequestVoteRequest* request,
                                           raft::v1::RequestVoteResponse* response)
 {
+    auto logger = Logger::getLogger();
+    if (logger)
+    {
+        logger->info("Received RequestVote RPC from candidate {}", request->candidate_id());
+    }
+
     if (!response) return grpc::Status(grpc::StatusCode::INTERNAL, "null response");
     if (!core_) return grpc::Status(grpc::StatusCode::INTERNAL, "core not initialized");
 
@@ -33,12 +40,25 @@ grpc::Status RaftServiceImpl::RequestVote(grpc::ServerContext* context, const ra
 
     response->set_term(static_cast<int64_t>(resp.term));
     response->set_vote_granted(resp.voteGranted);
+
+    if (logger)
+    {
+        logger->info("Responding to RequestVote: {} for term {}", (resp.voteGranted ? "granted" : "rejected"),
+                     resp.term);
+    }
+
     return grpc::Status::OK;
 }
 
 grpc::Status RaftServiceImpl::AppendEntries(grpc::ServerContext* context, const raft::v1::AppendEntriesRequest* request,
                                             raft::v1::AppendEntriesResponse* response)
 {
+    auto logger = Logger::getLogger();
+    if (logger)
+    {
+        logger->info("Received AppendEntries RPC from leader {}", request->leader_id());
+    }
+
     if (!response) return grpc::Status(grpc::StatusCode::INTERNAL, "null response");
     if (!core_) return grpc::Status(grpc::StatusCode::INTERNAL, "core not initialized");
 
@@ -68,15 +88,35 @@ grpc::Status RaftServiceImpl::AppendEntries(grpc::ServerContext* context, const 
     response->set_success(resp.success);
     response->set_match_index(static_cast<int64_t>(resp.matchIndex));
 
+    if (logger)
+    {
+        logger->info("Responding to AppendEntries: {} for term {}", (resp.success ? "accepted" : "rejected"),
+                     resp.term);
+    }
+
     return grpc::Status::OK;
 }
 
 grpc::Status RaftServiceImpl::GetLeader(grpc::ServerContext* context, const raft::v1::GetLeaderRequest* request,
                                         raft::v1::GetLeaderResponse* response)
 {
+    auto logger = Logger::getLogger();
+    if (logger)
+    {
+        logger->info("Received GetLeader RPC");
+    }
+
     if (!response) return grpc::Status(grpc::StatusCode::INTERNAL, "null response");
     if (!core_) return grpc::Status(grpc::StatusCode::INTERNAL, "core not initialized");
-    response->set_leader_address(core_->leader_address());
+
+    std::string leader_address = core_->leader_address();
+    response->set_leader_address(leader_address);
+
+    if (logger)
+    {
+        logger->info("Responding to GetLeader: {}", leader_address);
+    }
+
     return grpc::Status::OK;
 }
 

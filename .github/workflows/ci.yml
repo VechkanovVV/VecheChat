@@ -51,6 +51,9 @@ jobs:
             libgrpc++-dev \
             libgrpc-dev
 
+      - name: Install spdlog (apt)
+        run: sudo apt-get install -y libspdlog-dev
+
       - name: Building and Testing
         run: |
           rm -rf build

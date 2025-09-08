@@ -61,6 +61,8 @@ TEST(RaftGrpcTransportIntegration, ThreeNodes_RequestVoteAndAppendEntries)
         ASSERT_NE(servers.back(), nullptr);
     }
 
+    std::this_thread::sleep_for(300ms);
+
     auto sl = std::make_shared<utils::ServiceLocator>();
     sl->registerService<utils::ThreadPool>(4);
 

@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "logger.h"
 #include "messages.h"
 #include "strategies.h"
 
@@ -22,12 +23,17 @@ void RaftCore::start()
         voted_for_.reset();
         leader_id_.reset();
     }
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Raft core started as Follower");
     timer_.start(std::make_unique<ElectionTimerStrategy>([this] { onElectionTimeout(); }, config_.electionMinMs,
                                                          config_.electionMaxMs));
 }
 
 void RaftCore::onElectionTimeout()
 {
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Election timeout, starting new election for term {}", current_term_ + 1);
+
     std::uint64_t term_snapshot;
     std::uint64_t ll_index;
     std::uint64_t ll_term;
@@ -56,9 +62,12 @@ void RaftCore::onElectionTimeout()
 
     RequestVoteRequestMsg req{term_snapshot, config_.nodeId, ll_index, ll_term};
 
+    if (logger) logger->info("Broadcasting RequestVote to all peers for term {}", term_snapshot);
+
     transport_->broadcastRequestVote(req,
                                      [this](int peerId, const RequestVoteResponseMsg& resp)
                                      {
+                                         auto logger = Logger::getLogger();
                                          bool promote = false;
                                          bool stepDown = false;
 
@@ -77,6 +86,7 @@ void RaftCore::onElectionTimeout()
 
                                              else if (!resp.voteGranted)
                                              {
+                                                 if (logger) logger->info("Vote not granted by peer {}", peerId);
                                                  return;
                                              }
 
@@ -98,11 +108,14 @@ void RaftCore::onElectionTimeout()
 
                                          if (stepDown)
                                          {
+                                             if (logger)
+                                                 logger->info("Stepping down due to higher term from peer {}", peerId);
                                              updateTerm(resp.term);
                                              return;
                                          }
                                          if (promote)
                                          {
+                                             if (logger) logger->info("Received majority of votes, becoming leader");
                                              becomeLeader();
                                          }
                                      });
@@ -124,6 +137,10 @@ void RaftCore::updateTerm(std::uint64_t new_term)
         count_votes_ = 0;
         voters_.clear();
     }
+
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Updated term to {}", new_term);
+
     timer_.changeStrategy(std::make_unique<ElectionTimerStrategy>([this] { onElectionTimeout(); },
                                                                   config_.electionMinMs, config_.electionMaxMs));
 }
@@ -136,6 +153,10 @@ void RaftCore::becomeLeader()
         role_ = Role::Leader;
         leader_id_ = config_.nodeId;
     }
+
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Becoming leader for term {}", current_term_);
+
     timer_.changeStrategy(std::make_unique<HeartbeatTimerStrategy>([this] { sendHeartbeats(); }, config_.heartbeatMs));
     sendHeartbeats();
 }
@@ -161,6 +182,10 @@ void RaftCore::sendHeartbeats()
         {},  // entries empty (heartbeat)
         0    // leader_commit (TODO)
     };
+
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Sending heartbeat to all peers for term {}", term_snapshot);
+
     transport_->broadcastAppendEntries(hb);
 }
 
@@ -178,6 +203,9 @@ std::uint64_t RaftCore::lastLogTerm() const noexcept
 
 RequestVoteResponseMsg RaftCore::onRequestVote(const RequestVoteRequestMsg& req)
 {
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Received RequestVote from candidate {} for term {}", req.candidateId, req.term);
+
     bool grant{false};
     bool stepped_down{false};
     bool reject{false};
@@ -231,12 +259,18 @@ RequestVoteResponseMsg RaftCore::onRequestVote(const RequestVoteRequestMsg& req)
 
     if (stepped_down)
     {
+        if (logger) logger->info("Stepping down due to higher term in RequestVote");
         timer_.changeStrategy(std::make_unique<ElectionTimerStrategy>([this] { onElectionTimeout(); },
                                                                       config_.electionMinMs, config_.electionMaxMs));
     }
     else if (grant)
     {
+        if (logger) logger->info("Granting vote to candidate {}", req.candidateId);
         timer_.reset();
+    }
+    else
+    {
+        if (logger) logger->info("Rejecting vote for candidate {}", req.candidateId);
     }
 
     return RequestVoteResponseMsg{reply_term, grant && !reject};
@@ -244,6 +278,9 @@ RequestVoteResponseMsg RaftCore::onRequestVote(const RequestVoteRequestMsg& req)
 
 AppendEntriesResponseMsg RaftCore::onAppendEntries(const AppendEntriesRequestMsg& req)
 {
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Received AppendEntries from leader {} for term {}", req.leaderId, req.term);
+
     bool grant{false};
     bool need_election_strategy{false};
     std::uint64_t reply_term{0};
@@ -299,12 +336,18 @@ AppendEntriesResponseMsg RaftCore::onAppendEntries(const AppendEntriesRequestMsg
 
     if (need_election_strategy)
     {
+        if (logger) logger->info("Switching to election strategy after AppendEntries");
         timer_.changeStrategy(std::make_unique<ElectionTimerStrategy>([this] { onElectionTimeout(); },
                                                                       config_.electionMinMs, config_.electionMaxMs));
     }
     else if (grant)
     {
+        if (logger) logger->info("Accepting AppendEntries from leader {}", req.leaderId);
         timer_.reset();
+    }
+    else
+    {
+        if (logger) logger->info("Rejecting AppendEntries from leader {}", req.leaderId);
     }
 
     return AppendEntriesResponseMsg{reply_term, grant, match_index};

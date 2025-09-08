@@ -9,10 +9,11 @@ target_include_directories(RaftService
         ../../utils/service_locator
         ../../utils/thread_pool
         ../../utils/timer_delegate
+        ../../utils/logger
         core
         service
         transport
         ${CMAKE_BINARY_DIR}/protos/raft
 )
 
-target_link_libraries(RaftService PUBLIC raft_proto)
+target_link_libraries(RaftService PUBLIC raft_proto log)

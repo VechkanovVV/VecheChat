@@ -74,13 +74,14 @@ add_executable(raft_core_test
     ../utils/timer_delegate/timer_delegate.cpp
 )
 
-target_link_libraries(raft_core_test PRIVATE GTest::gtest_main)
+target_link_libraries(raft_core_test PRIVATE GTest::gtest_main log)
 
 target_include_directories(raft_core_test
     PUBLIC
     ../algorithm/raft/core
     ../algorithm/raft/transport
     ../utils/timer_delegate
+    ../utils/logger
 )
 
 #raft_grpc_transport_test
@@ -89,7 +90,7 @@ add_executable(raft_grpc_transport_test
     ../algorithm/raft/transport/raft_grpc_transport.cpp
 )
 
-target_link_libraries(raft_grpc_transport_test PRIVATE GTest::gtest_main raft_proto td tp)
+target_link_libraries(raft_grpc_transport_test PRIVATE GTest::gtest_main raft_proto td tp log)
 
 target_include_directories(raft_grpc_transport_test
     PUBLIC
@@ -98,6 +99,7 @@ target_include_directories(raft_grpc_transport_test
     ../utils/thread_pool
     ../algorithm/raft/core
     ${CMAKE_BINARY_DIR}/protos/raft
+    ../utils/logger
 )
 
 add_dependencies(raft_grpc_transport_test raft_proto tp)
@@ -113,6 +115,7 @@ target_link_libraries(raft_service_test PRIVATE
     td
     tp
     raft_proto
+    log
 )
 
 target_include_directories(raft_service_test
@@ -122,6 +125,7 @@ target_include_directories(raft_service_test
     ../utils/thread_pool
     ../algorithm/raft/core
     ${CMAKE_BINARY_DIR}/protos/raft
+    ../utils/logger
 )
 
 add_dependencies(raft_service_test RaftService td tp raft_proto)
@@ -134,4 +138,3 @@ add_test(NAME raft_strategies COMMAND raft_strategies_test)
 add_test(NAME raft_core COMMAND raft_core_test)
 add_test(NAME raft_grpc_transport COMMAND raft_grpc_transport_test)
 add_test(NAME raft_service COMMAND raft_service_test)
-

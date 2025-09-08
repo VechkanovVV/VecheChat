@@ -178,3 +178,8 @@ void RaftGrpcTransport::removePeer(std::uint64_t id)
         peers_info_.erase(id);
     }
 }
+
+void RaftGrpcTransport::set_rpc_timeout(int time)
+{
+    rpc_timeout_ms_ = time;
+}

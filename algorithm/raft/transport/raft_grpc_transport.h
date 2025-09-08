@@ -28,6 +28,8 @@ class RaftGrpcTransport : public IRaftTransport
     void addPeer(const PeerInfo&, std::shared_ptr<grpc::Channel>&, std::unique_ptr<raft::v1::RaftService::Stub>&);
     void removePeer(std::uint64_t);
 
+    void set_rpc_timeout(int time);
+
    private:
     struct PeerState
     {
