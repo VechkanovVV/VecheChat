@@ -120,6 +120,26 @@ grpc::Status RaftServiceImpl::GetLeader(grpc::ServerContext* context, const raft
     return grpc::Status::OK;
 }
 
+grpc::Status RaftServiceImpl::RemovePeer(grpc::ServerContext* context, const raft::v1::RemovePeerRequest* request,
+                                         raft::v1::RemovePeerResponse* response)
+{
+    auto logger = Logger::getLogger();
+    if (logger)
+    {
+        logger->info("Received RemovePeer request for node {}", request->id());
+    }
+
+    if (!response) return grpc::Status(grpc::StatusCode::INTERNAL, "null response");
+    if (!core_) return grpc::Status(grpc::StatusCode::INTERNAL, "core not initialized");
+
+    RemovePeerRequestMsg reqm;
+    reqm.id = request->id();
+    auto respm = core_->onRemovePeer(reqm);
+    response->set_success(respm.success);
+    response->set_term(respm.term);
+    return grpc::Status::OK;
+}
+
 std::string RaftServiceImpl::node_address()
 {
     return node_address_;

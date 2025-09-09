@@ -26,6 +26,10 @@ class RaftServiceImpl final : public raft::v1::RaftService::Service
 
     grpc::Status GetLeader(grpc::ServerContext* context, const raft::v1::GetLeaderRequest* request,
                            raft::v1::GetLeaderResponse* response) override;
+
+    grpc::Status RemovePeer(grpc::ServerContext* context, const raft::v1::RemovePeerRequest*,
+                            raft::v1::RemovePeerResponse* response) override;
+
     std::string node_address();
 
    private:

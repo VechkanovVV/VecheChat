@@ -90,21 +90,17 @@ int main(int argc, char** argv)
         std::cout << "No arguments provided, starting in single-node mode on " << address << std::endl;
     }
 
-    // Инициализируем глобальный логгер
     Logger::init(std::to_string(node_id));
 
-    // Создаем и настраиваем ServiceLocator
     auto sl = std::make_shared<utils::ServiceLocator>();
     sl->registerService<utils::ThreadPool>(std::thread::hardware_concurrency());
 
-    // Создаем и запускаем сервер
     RaftServer server(node_id, address, peers, election_min, election_max, heartbeat, sl);
     if (!server.start())
     {
         return 1;
     }
 
-    // CLI интерфейс
     std::string command;
     while (true)
     {

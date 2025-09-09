@@ -1,5 +1,6 @@
 #include "raft_core.h"
 
+#include <algorithm>
 #include <atomic>
 #include <future>
 #include <mutex>
@@ -351,6 +352,47 @@ AppendEntriesResponseMsg RaftCore::onAppendEntries(const AppendEntriesRequestMsg
     }
 
     return AppendEntriesResponseMsg{reply_term, grant, match_index};
+}
+
+RemovePeerResponseMsg RaftCore::onRemovePeer(const RemovePeerRequestMsg& req)
+{
+    auto logger = Logger::getLogger();
+    if (logger)
+    {
+        logger->info("Removing peer {} from configuration", req.id);
+    }
+
+    std::uint64_t term_snapshot;
+    bool removed = false;
+    Role current_role;
+    {
+        std::lock_guard<std::mutex> lock(state_mtx_);
+        term_snapshot = current_term_;
+        current_role = role_;
+
+        auto it = std::remove_if(config_.peers.begin(), config_.peers.end(),
+                                 [&](const PeerInfo& peer) { return peer.id == req.id; });
+        removed = (it != config_.peers.end());
+        config_.peers.erase(it, config_.peers.end());
+    }
+
+    if (removed && transport_)
+    {
+        transport_->removePeer(req.id);
+
+        if (current_role == Role::Leader)
+        {
+            transport_->broadcastRemovePeer(req);
+        }
+    }
+
+    return RemovePeerResponseMsg{term_snapshot, removed};
+}
+
+std::optional<int> RaftCore::leader_id()
+{
+    std::lock_guard<std::mutex> lock(state_mtx_);
+    return leader_id_;
 }
 
 Role RaftCore::role()

@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <thread>
@@ -11,6 +12,7 @@
 
 #include "iraft_transport.h"
 #include "messages.h"
+#include "peer_info.h"
 
 struct MockTransport : IRaftTransport
 {
@@ -26,11 +28,17 @@ struct MockTransport : IRaftTransport
     }
 
     void broadcastAppendEntries(const AppendEntriesRequestMsg& req,
-                                std::function<void(int, const AppendEntriesResponseMsg&)> = {}) override
+                                std::function<void(int, const AppendEntriesResponseMsg&)> /*onReply*/) override
     {
         lastHeartbeat = req;
         heartbeatCount.fetch_add(1, std::memory_order_relaxed);
     }
+
+    void broadcastRemovePeer(const RemovePeerRequestMsg& /*req*/) override {}
+
+    void sendRemovePeerToPeer(int /*peerId*/, const RemovePeerRequestMsg& /*req*/) override {}
+
+    void removePeer(std::uint64_t /*id*/) override {}
 
     std::vector<int> peers_;
     std::atomic<int> heartbeatCount{0};

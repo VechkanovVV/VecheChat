@@ -17,7 +17,6 @@ RaftServer::RaftServer(int node_id, const std::string& address, const std::vecto
       heartbeat_(heartbeat),
       sl_(sl)
 {
-    // Логгер уже инициализирован глобально в main
 }
 
 bool RaftServer::start()
@@ -83,14 +82,31 @@ bool RaftServer::start()
 
 void RaftServer::stop()
 {
+    RemovePeerRequestMsg req;
+    req.id = node_id_;
+
+    auto role = core_->role();
+    if (role == Role::Leader)
+    {
+        if (transport_) transport_->broadcastRemovePeer(req);
+    }
+    else
+    {
+        auto leader_id = core_->leader_id();
+        if (leader_id && transport_)
+        {
+            transport_->sendRemovePeerToPeer(*leader_id, req);
+        }
+    }
+
     if (server_)
     {
         server_->Shutdown();
-        auto logger = Logger::getLogger();
-        if (logger)
-        {
-            logger->info("Server stopped");
-        }
+    }
+    auto logger = Logger::getLogger();
+    if (logger)
+    {
+        logger->info("Server stopped");
     }
 }
 

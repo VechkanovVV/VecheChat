@@ -40,3 +40,14 @@ struct AppendEntriesResponseMsg
     bool success{};
     std::uint64_t matchIndex{};
 };
+
+struct RemovePeerRequestMsg
+{
+    std::uint64_t id{};
+};
+
+struct RemovePeerResponseMsg
+{
+    std::uint64_t term;
+    bool success{};
+};

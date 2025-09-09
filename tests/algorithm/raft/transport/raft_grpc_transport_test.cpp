@@ -12,6 +12,8 @@
 #include <thread>
 #include <vector>
 
+#include "raft.grpc.pb.h"
+#include "raft.pb.h"
 #include "service_locator.h"
 #include "thread_pool.h"
 
@@ -20,8 +22,6 @@ using namespace std::chrono_literals;
 class FakeRaftServiceImpl final : public raft::v1::RaftService::Service
 {
    public:
-    FakeRaftServiceImpl() = default;
-
     grpc::Status RequestVote(grpc::ServerContext* /*ctx*/, const raft::v1::RequestVoteRequest* req,
                              raft::v1::RequestVoteResponse* resp) override
     {
@@ -43,6 +43,7 @@ class FakeRaftServiceImpl final : public raft::v1::RaftService::Service
 static std::unique_ptr<grpc::Server> start_server(int port, std::unique_ptr<FakeRaftServiceImpl>& service_holder)
 {
     service_holder = std::make_unique<FakeRaftServiceImpl>();
+
     grpc::ServerBuilder builder;
     std::string address = "127.0.0.1:" + std::to_string(port);
     builder.AddListeningPort(address, grpc::InsecureServerCredentials());
@@ -55,6 +56,8 @@ TEST(RaftGrpcTransportIntegration, ThreeNodes_RequestVoteAndAppendEntries)
     const std::vector<int> ports = {50051, 50052, 50053};
     std::vector<std::unique_ptr<FakeRaftServiceImpl>> services(ports.size());
     std::vector<std::unique_ptr<grpc::Server>> servers;
+    servers.reserve(ports.size());
+
     for (size_t i = 0; i < ports.size(); ++i)
     {
         servers.push_back(start_server(ports[i], services[i]));
@@ -67,34 +70,35 @@ TEST(RaftGrpcTransportIntegration, ThreeNodes_RequestVoteAndAppendEntries)
     sl->registerService<utils::ThreadPool>(4);
 
     std::vector<PeerInfo> peers;
+    peers.reserve(ports.size());
     for (size_t i = 0; i < ports.size(); ++i)
     {
-        PeerInfo info;
-        info.id = static_cast<std::uint64_t>(i + 1);
-        info.address = "127.0.0.1:" + std::to_string(ports[i]);
-        peers.push_back(info);
+        peers.push_back(PeerInfo{
+            static_cast<std::uint64_t>(i + 1),
+            std::string("127.0.0.1:") + std::to_string(ports[i]),
+        });
     }
 
-    auto sl_ref = sl;
-    RaftGrpcTransport transport(peers, sl_ref);
+    RaftGrpcTransport transport(peers, sl);
+    transport.set_rpc_timeout(2000);
 
-    RequestVoteRequestMsg rv_req;
+    RequestVoteRequestMsg rv_req{};
     rv_req.term = 42;
     rv_req.candidateId = 99;
     rv_req.lastLogIndex = 0;
     rv_req.lastLogTerm = 0;
 
-    AppendEntriesRequestMsg ae_req;
+    AppendEntriesRequestMsg ae_req{};
     ae_req.term = 43;
     ae_req.leaderId = 1;
     ae_req.prevLogIndex = 0;
     ae_req.prevLogTerm = 0;
     ae_req.leaderCommit = 0;
-    ae_req.entries.clear();
 
     std::mutex mtx;
     std::condition_variable cv;
-    int expected = static_cast<int>(peers.size());
+
+    const int expected = static_cast<int>(peers.size());
     std::atomic<int> rv_count{0};
     std::atomic<int> ae_count{0};
 
@@ -104,7 +108,9 @@ TEST(RaftGrpcTransportIntegration, ThreeNodes_RequestVoteAndAppendEntries)
     auto idx_of = [&](int peerId) -> int
     {
         for (size_t i = 0; i < peers.size(); ++i)
+        {
             if (static_cast<int>(peers[i].id) == peerId) return static_cast<int>(i);
+        }
         return -1;
     };
 
@@ -114,14 +120,15 @@ TEST(RaftGrpcTransportIntegration, ThreeNodes_RequestVoteAndAppendEntries)
                                        int idx = idx_of(peerId);
                                        if (idx >= 0) rv_results[idx] = resp;
                                        rv_count.fetch_add(1, std::memory_order_relaxed);
-                                       std::lock_guard<std::mutex> lock(mtx);
+                                       std::lock_guard<std::mutex> lk(mtx);
                                        cv.notify_one();
                                    });
 
     {
-        std::unique_lock<std::mutex> lock(mtx);
-        cv.wait_for(lock, 2s, [&] { return rv_count.load() >= expected; });
+        std::unique_lock<std::mutex> lk(mtx);
+        cv.wait_for(lk, 2s, [&] { return rv_count.load() >= expected; });
     }
+
     EXPECT_EQ(rv_count.load(), expected);
     for (int i = 0; i < expected; ++i)
     {
@@ -135,14 +142,15 @@ TEST(RaftGrpcTransportIntegration, ThreeNodes_RequestVoteAndAppendEntries)
                                          int idx = idx_of(peerId);
                                          if (idx >= 0) ae_results[idx] = resp;
                                          ae_count.fetch_add(1, std::memory_order_relaxed);
-                                         std::lock_guard<std::mutex> lock(mtx);
+                                         std::lock_guard<std::mutex> lk(mtx);
                                          cv.notify_one();
                                      });
 
     {
-        std::unique_lock<std::mutex> lock(mtx);
-        cv.wait_for(lock, 2s, [&] { return ae_count.load() >= expected; });
+        std::unique_lock<std::mutex> lk(mtx);
+        cv.wait_for(lk, 2s, [&] { return ae_count.load() >= expected; });
     }
+
     EXPECT_EQ(ae_count.load(), expected);
     for (int i = 0; i < expected; ++i)
     {

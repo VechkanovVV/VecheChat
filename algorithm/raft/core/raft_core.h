@@ -41,6 +41,9 @@ class RaftCore final
 
     RequestVoteResponseMsg onRequestVote(const RequestVoteRequestMsg&);
     AppendEntriesResponseMsg onAppendEntries(const AppendEntriesRequestMsg&);
+    RemovePeerResponseMsg onRemovePeer(const RemovePeerRequestMsg&);
+
+    std::optional<int> leader_id();
 
    private:
     void becomeLeader();
