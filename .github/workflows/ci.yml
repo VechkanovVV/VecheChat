@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: 
+      - main
+      - dev
+  pull_request:
+    branches: 
+      - main
+      - dev
+
+jobs:
+  style_check-build-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Update mirrors
+        run:  sudo apt update
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+
+      - name: Run clang-format check
+        run: |
+          FILES=$(find . -name "*.cpp" -o -name "*.h")
+          echo "Checking style for files:"
+          echo "$FILES"
+          echo "$FILES" | xargs clang-format --dry-run --Werror
+
+      - name: CMake installation
+        run: sudo apt-get install -y cmake
+
+      - name: Install gRPC and Protobuf dependencies
+        run: |
+          sudo apt-get install -y \
+            build-essential \
+            autoconf \
+            libtool \
+            pkg-config \
+            cmake \
+            git \
+            curl \
+            unzip \
+            libprotobuf-dev \
+            protobuf-compiler \
+            protobuf-compiler-grpc \
+            libgrpc++-dev \
+            libgrpc-dev
+
+      - name: Install spdlog (apt)
+        run: sudo apt-get install -y libspdlog-dev
+
+      - name: Building and Testing
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake ..
+          cmake --build .
+          ctest --output-on-failure
+
+
+          
