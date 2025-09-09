@@ -3,6 +3,8 @@
 #include <thread>
 
 #include "logger.h"
+#include "messaging_core.h"
+#include "messaging_grpc_transport.h"
 #include "raft_server.h"
 #include "service_locator.h"
 #include "thread_pool.h"
@@ -96,6 +98,28 @@ int main(int argc, char** argv)
     sl->registerService<utils::ThreadPool>(std::thread::hardware_concurrency());
 
     RaftServer server(node_id, address, peers, election_min, election_max, heartbeat, sl);
+
+    auto messaging_transport = std::make_shared<MessagingGrpcTransport>(node_id, peers, sl);
+    auto messaging_core = std::make_shared<MessagingCore>(node_id, sl, messaging_transport);
+
+    server.set_messaging_core(messaging_core);
+
+    auto logger = Logger::getLogger();
+    if (logger) logger->info("Checking peer connections...");
+    for (const auto& peer : peers)
+    {
+        auto channel = grpc::CreateChannel(peer.address, grpc::InsecureChannelCredentials());
+        auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(2);
+        if (channel->WaitForConnected(deadline))
+        {
+            if (logger) logger->info("Connected to peer {} at {}", peer.id, peer.address);
+        }
+        else
+        {
+            if (logger) logger->warn("Failed to connect to peer {} at {}", peer.id, peer.address);
+        }
+    }
+
     if (!server.start())
     {
         return 1;
@@ -121,8 +145,34 @@ int main(int argc, char** argv)
             std::cout << "Available commands:" << std::endl;
             std::cout << "  stop      - Stop the server" << std::endl;
             std::cout << "  get_log   - Get server logs" << std::endl;
+            std::cout << "  sendall   - Send message to all nodes" << std::endl;
             std::cout << "  help      - Show this help" << std::endl;
             std::cout << "  exit      - Exit the CLI" << std::endl;
+        }
+        else if (command.rfind("sendall ", 0) == 0)
+        {
+            std::string message = command.substr(8);
+            auto leader_id_opt = server.leader_id();
+
+            if (!leader_id_opt)
+            {
+                std::cout << "No leader elected" << std::endl;
+            }
+            else
+            {
+                messaging_core->send(*leader_id_opt, message, 0,
+                                     [](bool ok)
+                                     {
+                                         if (!ok)
+                                         {
+                                             std::cout << "Message sending failed" << std::endl;
+                                         }
+                                         else
+                                         {
+                                             std::cout << "Message sent successfully" << std::endl;
+                                         }
+                                     });
+            }
         }
         else if (command == "exit")
         {

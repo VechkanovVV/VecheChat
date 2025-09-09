@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package messaging.v1;
+
+service MessagingService {
+    rpc SendToLeaderMessage(SendToLeaderMessageRequest) returns (SendToLeaderMessageResponse);
+    rpc SendBroadcastMessage(SendBroadcastMessageRequest) returns (SendBroadcastMessageResponse);
+}
+
+message SendToLeaderMessageRequest {
+    string text = 1;
+    int64 id = 2;
+}
+
+message SendToLeaderMessageResponse {
+    bool delivered = 1;
+}
+
+message SendBroadcastMessageRequest {
+    string text = 1;
+    int64 id = 2;
+}
+
+message SendBroadcastMessageResponse {
+    bool delivered = 1;
+}
