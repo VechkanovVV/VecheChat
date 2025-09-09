@@ -1,0 +1,97 @@
+#include "timer_delegate.h"
+
+#include <gtest/gtest.h>
+
+#include <future>
+
+#include "itimer_strategy.h"
+
+TEST(TimerDelegateTest, NullptrTest)
+{
+    utils::TimerDelegate td{};
+    EXPECT_THROW(td.start(nullptr), std::invalid_argument);
+}
+
+TEST(TimerDelegateTest, DoubleStart)
+{
+    class FirstStrategy final : public utils::ITimerStrategy
+    {
+       public:
+        virtual std::chrono::milliseconds nextTimeout() override { return std::chrono::milliseconds(150); }
+
+        void onTimeout() override {}
+    };
+
+    utils::TimerDelegate td{};
+
+    td.start(std::make_unique<FirstStrategy>());
+    EXPECT_THROW(td.start(std::make_unique<FirstStrategy>()), std::runtime_error);
+}
+
+TEST(TimerDelegateTest, CheckTimeout)
+{
+    struct Promise
+    {
+        std::promise<void> p;
+        std::atomic<bool> called{false};
+
+        void set()
+        {
+            bool expected = false;
+            if (called.compare_exchange_strong(expected, true))
+            {
+                try
+                {
+                    p.set_value();
+                }
+                catch (...)
+                {
+                }
+            }
+        }
+
+        std::future<void> get_future() { return p.get_future(); }
+    } p{};
+
+    struct FirstStrategy final : public utils::ITimerStrategy
+    {
+        FirstStrategy(Promise& p) : p(p) {}
+        std::chrono::milliseconds nextTimeout() override { return std::chrono::milliseconds(150); }
+        void onTimeout() override { p.set(); }
+
+        Promise& p;
+    };
+
+    auto fut = p.get_future();
+
+    utils::TimerDelegate td;
+    td.start(std::make_unique<FirstStrategy>(p));
+    ASSERT_EQ(std::future_status::ready, fut.wait_for(std::chrono::milliseconds(1000)));
+    td.stop();
+}
+
+TEST(TimerDelegateTest, CheckReset)
+{
+    struct StrategyWithCounter final : public utils::ITimerStrategy
+    {
+        std::chrono::milliseconds nextTimeout() override { return std::chrono::milliseconds(100); }
+        void onTimeout() override { ++count; }
+        std::atomic<int> count{0};
+    };
+
+    utils::TimerDelegate td;
+    auto strategy_ptr = std::make_unique<StrategyWithCounter>();
+    auto* strategy = strategy_ptr.get();
+    td.start(std::move(strategy_ptr));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    td.reset();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    EXPECT_EQ(0, strategy->count.load());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(1, strategy->count.load());
+
+    td.stop();
+}

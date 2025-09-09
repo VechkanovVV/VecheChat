@@ -1,0 +1,6 @@
+.vscode/
+script.sh
+build/
+lint.sh
+pr.sh
+result.txt
