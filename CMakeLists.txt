@@ -21,9 +21,11 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/utils/logger
     ${CMAKE_SOURCE_DIR}/utils/thread_pool
     ${CMAKE_SOURCE_DIR}/utils/timer_delegate
+    ${CMAKE_SOURCE_DIR}/feature/messaging/core
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/protos
     ${CMAKE_BINARY_DIR}/protos/raft
+    ${CMAKE_BINARY_DIR}/protos/messaging
 )
 
 add_subdirectory(protos)
@@ -39,6 +41,7 @@ target_include_directories(log PUBLIC utils/logger)
 target_link_libraries(log PUBLIC spdlog::spdlog fmt::fmt)
 
 add_subdirectory(algorithm/raft)
+add_subdirectory(feature)
 
 add_library(RaftServer src/raft_server/raft_server.cpp)
 target_include_directories(RaftServer
@@ -47,13 +50,14 @@ target_include_directories(RaftServer
         ${CMAKE_BINARY_DIR}/protos
         ${CMAKE_BINARY_DIR}/protos/raft
 )
-target_link_libraries(RaftServer PUBLIC RaftService log)
+target_link_libraries(RaftServer PUBLIC RaftService log Messaging)
 
 add_executable(${projectName} src/main.cpp)
 target_link_libraries(${projectName}
     PRIVATE
         RaftServer
         RaftService
+        Messaging
         tp
         td
         log

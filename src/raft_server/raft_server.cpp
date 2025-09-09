@@ -19,6 +19,12 @@ RaftServer::RaftServer(int node_id, const std::string& address, const std::vecto
 {
 }
 
+void RaftServer::set_messaging_core(std::shared_ptr<MessagingCore> messaging_core)
+{
+    messaging_core_ = messaging_core;
+    messaging_service_ = std::make_unique<MessagingServiceImpl>(messaging_core_);
+}
+
 bool RaftServer::start()
 {
     try
@@ -43,6 +49,11 @@ bool RaftServer::start()
         grpc::ServerBuilder builder;
         builder.AddListeningPort(address_, grpc::InsecureServerCredentials());
         builder.RegisterService(service_.get());
+
+        if (messaging_service_)
+        {
+            builder.RegisterService(messaging_service_.get());
+        }
 
         server_ = builder.BuildAndStart();
 
@@ -121,4 +132,13 @@ std::string RaftServer::getLogs() const
     std::stringstream buffer;
     buffer << log_file.rdbuf();
     return buffer.str();
+}
+
+std::optional<int> RaftServer::leader_id() const
+{
+    if (core_)
+    {
+        return core_->leader_id();
+    }
+    return std::nullopt;
 }

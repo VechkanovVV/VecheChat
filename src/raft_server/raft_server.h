@@ -3,9 +3,12 @@
 #include <grpcpp/grpcpp.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "messaging_core.h"
+#include "messaging_service.h"
 #include "raft_core.h"
 #include "raft_grpc_transport.h"
 #include "raft_service.h"
@@ -21,6 +24,8 @@ class RaftServer
     bool start();
     void stop();
     std::string getLogs() const;
+    std::optional<int> leader_id() const;
+    void set_messaging_core(std::shared_ptr<MessagingCore> messaging_core);
 
    private:
     int node_id_;
@@ -35,4 +40,7 @@ class RaftServer
     std::shared_ptr<RaftCore> core_;
     std::unique_ptr<RaftServiceImpl> service_;
     std::unique_ptr<grpc::Server> server_;
+
+    std::shared_ptr<MessagingCore> messaging_core_;
+    std::unique_ptr<MessagingServiceImpl> messaging_service_;
 };
