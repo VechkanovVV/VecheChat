@@ -1,3 +1,4 @@
+#raft_proto
 set(RAFT_PROTO_FILE
     raft/raft.proto
 )
@@ -23,6 +24,35 @@ protobuf_generate(
 
 protobuf_generate(
     TARGET raft_proto
+    LANGUAGE grpc
+    GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
+    PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
+)
+
+#MessagingExchage
+set(MESSAGING_PROTO_FILE
+    messaging/messaging.proto
+)
+
+add_library(MessagingExchage
+    ${MESSAGING_PROTO_FILE}
+)
+
+target_link_libraries(MessagingExchage
+    PUBLIC
+        protobuf::libprotobuf
+        gRPC::grpc++
+)
+
+target_include_directories(MessagingExchage PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+protobuf_generate(
+    TARGET MessagingExchage
+    LANGUAGE cpp
+)
+
+protobuf_generate(
+    TARGET MessagingExchage
     LANGUAGE grpc
     GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
     PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
